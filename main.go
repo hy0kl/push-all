@@ -24,38 +24,39 @@ func main() {
 		os.Exit(2)
 	}
 
-	branchBox := strings.Split(cmdOut, "\n")
-	if len(branchBox) <= 0 {
+	upstreamBox := strings.Split(cmdOut, "\n")
+	if len(upstreamBox) <= 0 {
 		_, _ = fmt.Fprintf(os.Stdout, "There is no git source in the current working directory.\n")
 		os.Exit(3)
 	}
 
 	mt := sync.Mutex{}
 	wg := sync.WaitGroup{}
-	for _, branch := range branchBox{
-		if branch == "" {
+	for _, upstream := range upstreamBox{
+		if upstream == "" {
 			continue
 		}
 
 		wg.Add(1)
-		go func(wg *sync.WaitGroup, name string) {
+		go func(wg *sync.WaitGroup, up string) {
 			defer wg.Done()
 
-			pushCmd := exec.Command("git", "push", name, "master")
+			pushCmd := exec.Command("git", "push", up, "master")
 			stdout, err := pushCmd.CombinedOutput()
 			if err != nil {
 				mt.Lock()
-				_, _ = fmt.Fprintf(os.Stdout, "exec cmd stdout pipe get exception, err: %v", err)
+				_, _ = fmt.Fprintf(os.Stdout, "exec cmd stdout pipe get exception.\nupstream: %s, stderr: %s, err: %v\n",
+					up, string(stdout), err)
 				mt.Unlock()
 				return
 			}
 
 			mt.Lock()
-			_, _ = fmt.Fprintf(os.Stdout, "---> %s begain <---\n", name)
+			_, _ = fmt.Fprintf(os.Stdout, "---> %s begain <---\n", up)
 			_, _ = fmt.Fprintf(os.Stdout, "%s", string(stdout))
-			_, _ = fmt.Fprintf(os.Stdout, "--- %s end ---\n", name)
+			_, _ = fmt.Fprintf(os.Stdout, "--- %s end ---\n", up)
 			mt.Unlock()
-		}(&wg, branch)
+		}(&wg, upstream)
 	}
 
 	wg.Wait()
