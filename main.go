@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"os/exec"
@@ -9,18 +10,21 @@ import (
 )
 
 func main() {
-	branchCmd := "git remote -v | awk '{print $1}' | sort -u"
-	cmd := exec.Command("bash","-c", branchCmd )
-	stdout, err := cmd.Output()
+	upstreamCmd := "git remote -v | awk '{print $1}' | sort -u"
+	cmd := exec.Command("bash","-c", upstreamCmd )
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	err := cmd.Run()
 	if err != nil {
-		_, _ = fmt.Fprintf(os.Stdout, "exec find git branch cmd get exception, cmd> %s, err: %v\n", branchCmd, err)
+		_, _ = fmt.Fprintf(os.Stdout, "exec find git upstream cmd get exception, cmd> %s, err: %v\n", upstreamCmd, err)
 		os.Exit(1)
 	}
 
-	cmdOut := string(stdout)
-
+	cmdOut := stdout.String()
 	if cmdOut == "" {
-		_, _ = fmt.Fprintf(os.Stdout, "cmd output is empty, cmd> %s\n", branchCmd)
+		_, _ = fmt.Fprintf(os.Stdout, "cmd output is empty\ncmd> %s\nstderr: %s", upstreamCmd, stderr.String())
 		os.Exit(2)
 	}
 
