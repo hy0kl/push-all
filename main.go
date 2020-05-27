@@ -7,6 +7,8 @@ import (
 	"os/exec"
 	"strings"
 	"sync"
+
+	"github.com/fatih/color"
 )
 
 func main() {
@@ -34,6 +36,10 @@ func main() {
 		os.Exit(3)
 	}
 
+	yellow := color.New(color.FgYellow).SprintFunc()
+	red := color.New(color.FgRed).SprintFunc()
+	blue := color.New(color.FgBlue, color.Bold).SprintfFunc()
+
 	mt := sync.Mutex{}
 	wg := sync.WaitGroup{}
 	for _, upstream := range upstreamBox{
@@ -49,16 +55,18 @@ func main() {
 			stdout, err := pushCmd.CombinedOutput()
 			if err != nil {
 				mt.Lock()
-				_, _ = fmt.Fprintf(os.Stdout, "exec cmd stdout pipe get exception.\nupstream: %s, stderr: %s, err: %v\n",
-					up, string(stdout), err)
+				out := yellow("exec cmd stdout pipe get exception.\n")
+				out += red(fmt.Sprintf("upstream: %s, stderr: %s, err: %v\n",
+					up, string(stdout), err))
+				_, _ = fmt.Fprint(os.Stdout, out)
 				mt.Unlock()
 				return
 			}
 
 			mt.Lock()
-			_, _ = fmt.Fprintf(os.Stdout, "---> %s begain <---\n", up)
+			_, _ = fmt.Fprintf(os.Stdout, "---> %s <---\n", blue(fmt.Sprintf(`%s begain`, up)))
 			_, _ = fmt.Fprintf(os.Stdout, "%s", string(stdout))
-			_, _ = fmt.Fprintf(os.Stdout, "--- %s end ---\n", up)
+			_, _ = fmt.Fprintf(os.Stdout, "--- %s ---\n", blue(fmt.Sprintf(`%s end`, up)))
 			mt.Unlock()
 		}(&wg, upstream)
 	}
