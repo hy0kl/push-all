@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"flag"
 	"fmt"
 	"os"
 	"os/exec"
@@ -11,7 +12,24 @@ import (
 	"github.com/fatih/color"
 )
 
+var (
+	branch string
+	help bool
+)
+
+func init()  {
+	flag.StringVar(&branch, "branch", "main", "set default branch")
+	flag.BoolVar(&help, "h", false, "show help usage and exit")
+}
+
 func main() {
+	flag.Parse()
+
+	if help{
+		flag.PrintDefaults()
+		os.Exit(0)
+	}
+
 	upstreamCmd := "git remote -v | awk '{print $1}' | sort -u"
 	cmd := exec.Command("bash","-c", upstreamCmd )
 	var stdout, stderr bytes.Buffer
@@ -51,7 +69,7 @@ func main() {
 		go func(wg *sync.WaitGroup, up string) {
 			defer wg.Done()
 
-			pushCmd := exec.Command("git", "push", up, "master")
+			pushCmd := exec.Command("git", "push", up, branch)
 			stdout, err := pushCmd.CombinedOutput()
 			if err != nil {
 				mt.Lock()
